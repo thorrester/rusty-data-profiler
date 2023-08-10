@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "rusty_data_profiler"
+version = "1.2.0"
+description = "Package for creating, tracking, storing and versioning machine learning artifacts"
+authors = ["Thorrester <48217609+thorrester@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+# required dependencies
+python = ">=3.9,<3.12"
+maturin = "^1.2.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.1.2"
+
+[build-system]
+requires = ["maturin>=1.2,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "rusty-data-profiler"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
