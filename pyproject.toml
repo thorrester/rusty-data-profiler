@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rusty_data_profiler"
+name = "rusty_data"
 version = "1.2.0"
 description = "Package for creating, tracking, storing and versioning machine learning artifacts"
 authors = ["Thorrester <48217609+thorrester@users.noreply.github.com>"]
@@ -8,6 +8,7 @@ authors = ["Thorrester <48217609+thorrester@users.noreply.github.com>"]
 # required dependencies
 python = ">=3.9,<3.12"
 maturin = "^1.2.0"
+numpy = "^1.25.2"
 
 [tool.poetry.group.dev]
 optional = true

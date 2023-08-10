@@ -22,10 +22,18 @@ fn add(a: f64, b: f64) -> PyResult<f64> {
     Ok(a + b)
 }
 
+#[pyfunction]
+fn compute_mean(values: Vec<f64>) -> PyResult<f64> {
+    let sum: f64 = values.iter().sum();
+    let count = values.len() as f64;
+    Ok(sum / count)
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rusty_data_profiler(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(add, m)?)?;
+    m.add_function(wrap_pyfunction!(compute_mean, m)?)?;
     Ok(())
 }

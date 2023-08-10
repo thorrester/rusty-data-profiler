@@ -168,7 +168,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusty-data-profiler"
+name = "rusty_data_profiler"
 version = "0.1.0"
 dependencies = [
  "pyo3",
