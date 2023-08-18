@@ -1,3 +1,4 @@
+mod math;
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
@@ -27,6 +28,8 @@ fn compute_mean(values: Vec<f64>) -> PyResult<f64> {
     let sum: f64 = values.iter().sum();
     let count = values.len() as f64;
     Ok(sum / count)
+    //let mean = values.as_array().mean().unwrap();
+    //Ok(mean)
 }
 
 /// A Python module implemented in Rust.
