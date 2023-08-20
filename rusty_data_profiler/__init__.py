@@ -1,0 +1,1 @@
+from rusty_data_profiler.data_func import rusty_mean
