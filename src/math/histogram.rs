@@ -3,7 +3,15 @@ use numpy::ndarray::{Array1, Array2};
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
-// create a function in rust that computes the bins of a given vector
+/// Compute the bins for a 1d array of data
+///
+/// # Arguments
+///
+/// * `data` - A 1d array of data
+/// * `num_bins` - The number of bins to use
+///
+/// # Returns
+/// * `Vec<f64>` - A vector of bins
 pub fn compute_bins(data: &Array1<f64>, num_bins: i32) -> Vec<f64> {
     // find the min and max of the data
 
@@ -25,7 +33,15 @@ pub fn compute_bins(data: &Array1<f64>, num_bins: i32) -> Vec<f64> {
     bins
 }
 
-// use the following function to compute the bin counts
+/// Compute the bin counts for a 1d array of data
+///
+/// # Arguments
+///
+/// * `data` - A 1d array of data
+/// * `bins` - A vector of bins
+///
+/// # Returns
+/// * `Vec<i32>` - A vector of bin counts
 pub fn compute_bin_counts(data: &Array1<f64>, bins: &Vec<f64>) -> Vec<i32> {
     // create a vector to hold the bin counts
     let bin_counts = Arc::new(Mutex::new(vec![0; bins.len()]));
@@ -67,6 +83,8 @@ pub fn compute_bin_counts(data: &Array1<f64>, bins: &Vec<f64>) -> Vec<i32> {
 /// * `bins` - An optional vector of bins
 /// * `num_bins` - The number of bins to use
 ///
+/// # Returns
+/// * `Vec<FeatureBin>` - A vector of feature bins
 pub async fn compute_bin_counts_from_2d_array(
     feature_names: &Vec<String>,
     array_data: &Array2<f64>,
@@ -119,7 +137,7 @@ mod tests {
     async fn test_compute_bin_counts_from_2d_array() {
         let num_features = 30;
         let num_bins = 10;
-        let test_array = Array2::random((10_000, num_features), Normal::new(0.0, 1.0).unwrap());
+        let test_array = Array2::random((100_000, num_features), Normal::new(0.0, 1.0).unwrap());
         let feature_names = Array1::random(num_features, Alphanumeric)
             .to_vec()
             .iter()

@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 ndarray-rand = "0.14.0"
-ndarray = { version = "0.15.6", features = ["rayon", "blas"] }
+ndarray = { version = "0.15.6", features = ["rayon", "matrixmultiply-threading",] }
 numpy = "0.19.0"
 pyo3 = { version = "0.19.2", features = ["extension-module"] }
 rayon = "1.7.0"
