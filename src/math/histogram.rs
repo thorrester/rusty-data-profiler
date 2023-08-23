@@ -85,7 +85,7 @@ pub fn compute_bin_counts(data: &Array1<f64>, bins: &Vec<f64>) -> Vec<i32> {
 ///
 /// # Returns
 /// * `Vec<FeatureBin>` - A vector of feature bins
-pub async fn compute_bin_counts_from_2d_array(
+pub fn compute_bin_counts_from_2d_array(
     feature_names: &Vec<String>,
     array_data: &Array2<f64>,
     bins: Option<&Vec<f64>>,
@@ -121,10 +121,9 @@ mod tests {
     use ndarray_rand::rand_distr::{Alphanumeric, Normal};
     use ndarray_rand::RandomExt;
     use numpy::ndarray::{Array1, Array2};
-    use tokio;
 
-    #[tokio::test]
-    async fn test_compute_bins() {
+    #[test]
+    fn test_compute_bins() {
         let test_array = Array1::random(10_000, Normal::new(0.0, 1.0).unwrap());
 
         let bins = compute_bins(&test_array, 10);
@@ -133,11 +132,13 @@ mod tests {
         assert_eq!(10000, counts.iter().sum::<i32>());
     }
 
-    #[tokio::test]
-    async fn test_compute_bin_counts_from_2d_array() {
+    #[test]
+    fn test_compute_bin_counts_from_2d_array() {
         let num_features = 30;
+        let num_records = 100_000;
         let num_bins = 10;
-        let test_array = Array2::random((100_000, num_features), Normal::new(0.0, 1.0).unwrap());
+        let test_array =
+            Array2::random((num_records, num_features), Normal::new(0.0, 1.0).unwrap());
         let feature_names = Array1::random(num_features, Alphanumeric)
             .to_vec()
             .iter()
@@ -146,8 +147,7 @@ mod tests {
 
         // test no feature bins specified
         let feature_bins =
-            compute_bin_counts_from_2d_array(&feature_names, &test_array, None, Some(num_bins))
-                .await;
+            compute_bin_counts_from_2d_array(&feature_names, &test_array, None, Some(num_bins));
         assert_eq!(feature_bins.len(), num_features);
 
         // test with feature bins
@@ -156,8 +156,7 @@ mod tests {
             &test_array,
             Some(&feature_bins[0].bins.to_vec()),
             None,
-        )
-        .await;
+        );
         assert_eq!(feature_bins_with_bins.len(), num_features);
     }
 }
