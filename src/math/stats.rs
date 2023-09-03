@@ -13,7 +13,7 @@ pub fn count_distinct<T>(feature_array: &[T]) -> Result<(usize, f64), String>
 where
     T: PartialEq + PartialOrd + std::fmt::Display,
 {
-    let unique: HashSet<String> = feature_array.into_iter().map(|x| x.to_string()).collect();
+    let unique: HashSet<String> = feature_array.iter().map(|x| x.to_string()).collect();
     let count = unique.len();
     let count_perc = count as f64 / feature_array.len() as f64;
     Ok((count, count_perc))
@@ -31,7 +31,7 @@ pub fn count_missing<T>(feature_array: &[Option<T>]) -> Result<(usize, f64), Str
 where
     T: PartialEq + Clone + Send + Sync + Float + From<i32> + From<f64> + 'static,
 {
-    let count = feature_array.into_iter().filter(|x| x.is_none()).count();
+    let count = feature_array.iter().filter(|x| x.is_none()).count();
     let count_perc = count as f64 / feature_array.len() as f64;
 
     Ok((count, count_perc))
@@ -46,10 +46,7 @@ where
 /// # Returns
 /// * `Result<(f64, f64), String>` - A tuple containing the number of infinite values and the percentage of infinite values
 pub fn count_infinity(feature_array: &[f64]) -> Result<(usize, f32), String> {
-    let count = feature_array
-        .into_iter()
-        .filter(|x| x.is_infinite())
-        .count();
+    let count = feature_array.iter().filter(|x| x.is_infinite()).count();
 
     let count_perc = count as f32 / feature_array.len() as f32;
 

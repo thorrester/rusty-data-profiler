@@ -1,13 +1,22 @@
 mod math;
+use crate::math::types::FeatureBin;
+use math::histogram::compute_bin_counts_from_2d_array;
+use numpy::PyReadonlyArray2;
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
+pub fn parse_array(
+    feature_names: Vec<String>,
+    array: PyReadonlyArray2<f64>,
+    bins: Option<Vec<f64>>,
+    num_bins: Option<u32>,
+) -> Vec<FeatureBin> {
+    let array = array.as_array();
+    compute_bin_counts_from_2d_array(&feature_names, &array, &bins, &num_bins)
 }
 
-/// add(a, b, /)
+/// add(a, b, /
 /// --
 ///
 /// This function adds two 64-bit floats.
@@ -33,9 +42,10 @@ fn compute_mean(values: Vec<f64>) -> PyResult<f64> {
 }
 
 /// A Python module implemented in Rust.
+/// Name must match cargo lib name
 #[pymodule]
 fn rusty_data_profiler(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_array, m)?)?;
     m.add_function(wrap_pyfunction!(add, m)?)?;
     m.add_function(wrap_pyfunction!(compute_mean, m)?)?;
     Ok(())

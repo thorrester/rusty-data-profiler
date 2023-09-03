@@ -1,5 +1,5 @@
 use crate::math::types::FeatureBin;
-use numpy::ndarray::{Array1, Array2};
+use numpy::ndarray::ArrayView2;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
@@ -12,11 +12,11 @@ use std::sync::{Arc, Mutex};
 ///
 /// # Returns
 /// * `Vec<f64>` - A vector of bins
-pub fn compute_bins(data: &Array1<f64>, num_bins: i32) -> Vec<f64> {
+pub fn compute_bins(data: &[f64], num_bins: u32) -> Vec<f64> {
     // find the min and max of the data
 
-    let min = data.fold(f64::INFINITY, |a, &b| a.min(b));
-    let max = data.fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+    let min = data.into_iter().fold(f64::INFINITY, |a, &b| a.min(b));
+    let max = data.into_iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
 
     // create a vector of bins
     let mut bins = Vec::<f64>::with_capacity(num_bins as usize);
@@ -42,7 +42,7 @@ pub fn compute_bins(data: &Array1<f64>, num_bins: i32) -> Vec<f64> {
 ///
 /// # Returns
 /// * `Vec<i32>` - A vector of bin counts
-pub fn compute_bin_counts(data: &Array1<f64>, bins: &Vec<f64>) -> Vec<i32> {
+pub fn compute_bin_counts(data: &[f64], bins: &[f64]) -> Vec<i32> {
     // create a vector to hold the bin counts
     let bin_counts = Arc::new(Mutex::new(vec![0; bins.len()]));
     let max_bin = bins.last().unwrap();
@@ -86,27 +86,26 @@ pub fn compute_bin_counts(data: &Array1<f64>, bins: &Vec<f64>) -> Vec<i32> {
 /// # Returns
 /// * `Vec<FeatureBin>` - A vector of feature bins
 pub fn compute_bin_counts_from_2d_array(
-    feature_names: &Vec<String>,
-    array_data: &Array2<f64>,
-    bins: Option<&Vec<f64>>,
-    num_bins: Option<i32>,
+    feature_names: &[String],
+    array_data: &ArrayView2<f64>,
+    bins: &Option<Vec<f64>>,
+    num_bins: &Option<u32>,
 ) -> Vec<FeatureBin> {
     let bin_vec = Arc::new(Mutex::new(Vec::new()));
     let columns = array_data.columns().into_iter().collect::<Vec<_>>();
     columns.par_iter().enumerate().for_each(|(index, column)| {
         let feature_name = feature_names[index].clone();
-
-        let bins = match bins {
+        let data_bins = match bins {
             Some(bins) => bins.to_vec(),
-            None => compute_bins(&column.into_owned(), num_bins.unwrap_or(10)),
+            None => compute_bins(&column.into_owned().to_vec(), num_bins.unwrap_or(10)),
         };
 
-        let bin_counts = compute_bin_counts(&column.into_owned(), &bins);
+        let data_bin_counts = compute_bin_counts(&column.into_owned().to_vec(), &data_bins);
 
         let bins = FeatureBin {
             name: feature_name,
-            bins: bins,
-            bin_counts: bin_counts,
+            bins: data_bins,
+            bin_counts: data_bin_counts,
         };
 
         bin_vec.lock().unwrap().push(bins);
@@ -126,9 +125,9 @@ mod tests {
     fn test_compute_bins() {
         let test_array = Array1::random(10_000, Normal::new(0.0, 1.0).unwrap());
 
-        let bins = compute_bins(&test_array, 10);
+        let bins = compute_bins(&test_array.to_vec(), 10);
 
-        let counts = compute_bin_counts(&test_array, &bins);
+        let counts = compute_bin_counts(&test_array.to_vec(), &bins);
         assert_eq!(10000, counts.iter().sum::<i32>());
     }
 
@@ -136,7 +135,7 @@ mod tests {
     fn test_compute_bin_counts_from_2d_array() {
         let num_features = 30;
         let num_records = 100_000;
-        let num_bins = 10;
+        let num_bins: u32 = 10;
         let test_array =
             Array2::random((num_records, num_features), Normal::new(0.0, 1.0).unwrap());
         let feature_names = Array1::random(num_features, Alphanumeric)
@@ -146,16 +145,20 @@ mod tests {
             .collect::<Vec<_>>();
 
         // test no feature bins specified
-        let feature_bins =
-            compute_bin_counts_from_2d_array(&feature_names, &test_array, None, Some(num_bins));
+        let feature_bins = compute_bin_counts_from_2d_array(
+            &feature_names,
+            &test_array.view(),
+            &None,
+            &Some(num_bins),
+        );
         assert_eq!(feature_bins.len(), num_features);
 
         // test with feature bins
         let feature_bins_with_bins = compute_bin_counts_from_2d_array(
             &feature_names,
-            &test_array,
-            Some(&feature_bins[0].bins.to_vec()),
-            None,
+            &test_array.view(),
+            &Some(feature_bins[0].bins.to_vec()),
+            &None,
         );
         assert_eq!(feature_bins_with_bins.len(), num_features);
     }
