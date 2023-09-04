@@ -138,6 +138,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfa799dd5ed20a7e349f3b4639aa80d74549c81716d9ec4f994c9b5815598306"
 
 [[package]]
+name = "indxvec"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db57ad2df10362a7a0401b7cb8423ebd31a3e76c8635c948ef9e2f939830af5e"
+
+[[package]]
 name = "itertools"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -179,6 +185,16 @@ dependencies = [
  "once_cell",
  "rawpointer",
  "thread-tree",
+]
+
+[[package]]
+name = "medians"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0a6d899741e56f1d51ee11e50edc403b3a0174422aec93557250c748db62c9a"
+dependencies = [
+ "indxvec",
+ "ran",
 ]
 
 [[package]]
@@ -413,6 +429,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ran"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c864d18bbec491e67fb137c333622ed897ab9211c75dc6f23f4c0dff1ba907a"
+
+[[package]]
 name = "rand"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -490,6 +512,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rstats"
+version = "1.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e856355d760d3389438cd1d374b2d7845c1ef7ae5998d4cb48e1d839ee7c522b"
+dependencies = [
+ "indxvec",
+ "medians",
+ "ran",
+ "rayon",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -512,6 +546,7 @@ dependencies = [
  "numpy",
  "pyo3",
  "rayon",
+ "rstats",
  "serde",
  "tokio",
 ]

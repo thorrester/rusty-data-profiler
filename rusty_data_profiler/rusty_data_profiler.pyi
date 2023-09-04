@@ -2,9 +2,21 @@ from typing import List, Optional
 from numpy.typing import NDArray
 
 class FeatureBin:
-    """Class that holds feature information related to the histogram bins."""
+    """Class that holds feature information related to the histogram bins"""
 
-    def __init__(self, name: str, bins: List[float], bin_counts: List[int]) -> None: ...
+    def __init__(self, name: str, bins: List[float], bin_counts: List[int]) -> None:
+        """Instantiate a FeatureBin object.
+
+        Args:
+            name:
+                Name of the feature.
+            bins:
+                List of bin edges.
+            bin_counts:
+                List of bin counts.
+        """
+
+        ...
 
 def parse_array(
     feature_names: List[str],

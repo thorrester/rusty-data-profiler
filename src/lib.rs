@@ -1,6 +1,6 @@
 mod math;
-use crate::math::types::FeatureBin;
-use math::histogram::compute_bin_counts_from_2d_array;
+use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Stats};
+use math::stats::compute_2d_array_stats;
 use numpy::PyReadonlyArray2;
 use pyo3::panic::PanicException;
 use pyo3::prelude::*;
@@ -10,11 +10,10 @@ use pyo3::prelude::*;
 pub fn parse_array(
     feature_names: Vec<String>,
     array: PyReadonlyArray2<f64>,
-    bins: Option<Vec<f64>>,
+    bins: Option<Vec<Vec<f64>>>,
     num_bins: Option<u32>,
-) -> Result<Vec<FeatureBin>, &PanicException> {
-    let feature_bins =
-        compute_bin_counts_from_2d_array(&feature_names, &array.as_array(), &bins, &num_bins);
+) -> Result<Vec<FeatureStat>, &PanicException> {
+    let feature_bins = compute_2d_array_stats(&feature_names, &array.as_array(), &bins, &num_bins);
 
     let features = match feature_bins {
         Ok(features) => features,
@@ -56,6 +55,10 @@ fn rusty_data_profiler(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse_array, m)?)?;
     m.add_function(wrap_pyfunction!(add, m)?)?;
     m.add_function(wrap_pyfunction!(compute_mean, m)?)?;
-    m.add_class::<FeatureBin>()?;
+    m.add_class::<FeatureStat>()?;
+    m.add_class::<Bin>()?;
+    m.add_class::<Distinct>()?;
+    m.add_class::<Infinity>()?;
+    m.add_class::<Stats>()?;
     Ok(())
 }
