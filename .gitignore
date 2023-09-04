@@ -71,3 +71,5 @@ docs/_build/
 # Pyenv
 .python-version
 scratch
+.ruff_cache
+.mypy_cache
