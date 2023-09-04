@@ -90,7 +90,7 @@ pub fn compute_bin_counts_from_2d_array(
     array_data: &ArrayView2<f64>,
     bins: &Option<Vec<f64>>,
     num_bins: &Option<u32>,
-) -> Vec<FeatureBin> {
+) -> Result<Vec<FeatureBin>, String> {
     let bin_vec = Arc::new(Mutex::new(Vec::new()));
     let columns = array_data.columns().into_iter().collect::<Vec<_>>();
     columns.par_iter().enumerate().for_each(|(index, column)| {
@@ -111,7 +111,10 @@ pub fn compute_bin_counts_from_2d_array(
         bin_vec.lock().unwrap().push(bins);
     });
 
-    return bin_vec.lock().unwrap().to_vec();
+    let results = bin_vec.lock().unwrap().to_vec();
+
+    println!("results: {:?}", results);
+    Ok(results)
 }
 
 #[cfg(test)]
@@ -150,7 +153,9 @@ mod tests {
             &test_array.view(),
             &None,
             &Some(num_bins),
-        );
+        )
+        .expect("Faild to compute bin counts");
+
         assert_eq!(feature_bins.len(), num_features);
 
         // test with feature bins
@@ -159,7 +164,9 @@ mod tests {
             &test_array.view(),
             &Some(feature_bins[0].bins.to_vec()),
             &None,
-        );
+        )
+        .expect("failed to compute bin counts");
+
         assert_eq!(feature_bins_with_bins.len(), num_features);
     }
 }

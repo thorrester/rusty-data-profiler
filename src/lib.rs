@@ -2,6 +2,7 @@ mod math;
 use crate::math::types::FeatureBin;
 use math::histogram::compute_bin_counts_from_2d_array;
 use numpy::PyReadonlyArray2;
+use pyo3::panic::PanicException;
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
@@ -11,9 +12,16 @@ pub fn parse_array(
     array: PyReadonlyArray2<f64>,
     bins: Option<Vec<f64>>,
     num_bins: Option<u32>,
-) -> Vec<FeatureBin> {
-    let array = array.as_array();
-    compute_bin_counts_from_2d_array(&feature_names, &array, &bins, &num_bins)
+) -> Result<Vec<FeatureBin>, &PanicException> {
+    let feature_bins =
+        compute_bin_counts_from_2d_array(&feature_names, &array.as_array(), &bins, &num_bins);
+
+    let features = match feature_bins {
+        Ok(features) => features,
+        Err(error) => panic!("Error while parsing array: {:?}", error),
+    };
+
+    Ok(features)
 }
 
 /// add(a, b, /
@@ -48,5 +56,6 @@ fn rusty_data_profiler(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse_array, m)?)?;
     m.add_function(wrap_pyfunction!(add, m)?)?;
     m.add_function(wrap_pyfunction!(compute_mean, m)?)?;
+    m.add_class::<FeatureBin>()?;
     Ok(())
 }
