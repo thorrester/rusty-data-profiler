@@ -81,7 +81,7 @@ pub fn compute_base_stats(feature_array: &ArrayView1<f64>) -> Result<Stats, Stri
     let computed_median = feature_array
         .to_vec()
         .as_slice()
-        .medstats(|&val| val.into())
+        .medstats(|&val| val)
         .unwrap();
 
     let inf_meta = count_infinity(feature_array).unwrap();
