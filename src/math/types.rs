@@ -53,6 +53,13 @@ pub struct Infinity {
     pub percent: f64,
 }
 
+/// Python class for holding missing data metadata
+///
+/// # Arguments
+///
+/// * `count` - The number of missing values
+/// * `percent` - The percentage of missing values
+///
 #[pyclass]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Missing {

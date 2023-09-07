@@ -5,6 +5,7 @@ use numpy::ndarray::{ArrayView1, ArrayView2};
 use rayon::prelude::*;
 use rstats::Median;
 use std::collections::HashSet;
+
 /// Compute the number of distinct values in a 1d array of data
 ///
 /// # Arguments
