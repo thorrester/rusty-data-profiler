@@ -1,1 +1,1 @@
-from .profiler import Parse2DArray
+from .profiler import Profiler

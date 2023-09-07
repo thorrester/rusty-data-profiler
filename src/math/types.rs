@@ -30,7 +30,7 @@ pub struct Bin {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Distinct {
     #[pyo3(get, set)]
-    pub count: u32,
+    pub count: usize,
 
     #[pyo3(get, set)]
     pub percent: f64,
@@ -47,7 +47,17 @@ pub struct Distinct {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Infinity {
     #[pyo3(get, set)]
-    pub count: u32,
+    pub count: usize,
+
+    #[pyo3(get, set)]
+    pub percent: f64,
+}
+
+#[pyclass]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Missing {
+    #[pyo3(get, set)]
+    pub count: usize,
 
     #[pyo3(get, set)]
     pub percent: f64,
@@ -88,6 +98,9 @@ pub struct Stats {
 
     #[pyo3(get, set)]
     pub infinity: Infinity,
+
+    #[pyo3(get, set)]
+    pub missing: Option<Missing>,
 }
 
 /// Python class for holding feature metadata

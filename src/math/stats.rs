@@ -13,14 +13,14 @@ use std::collections::HashSet;
 ///
 /// # Returns
 /// * `Result<Distinct, String>` - A tuple containing the number of distinct values and the percentage of distinct values
-pub fn count_distinct<T: Float + Send + Sync + std::fmt::Display>(
+pub fn count_distinct<T: Send + Sync + std::fmt::Display>(
     feature_array: &ArrayView1<T>,
 ) -> Result<Distinct, String> {
     let unique: HashSet<String> = feature_array
         .into_par_iter()
         .map(|x| x.to_string())
         .collect();
-    let count = unique.len() as u32;
+    let count = unique.len();
     let count_perc = count as f64 / feature_array.len() as f64;
 
     Ok(Distinct {
@@ -59,7 +59,7 @@ pub fn count_infinity(feature_array: &ArrayView1<f64>) -> Result<Infinity, Strin
     let count = feature_array
         .into_par_iter()
         .filter(|x| x.is_infinite())
-        .count() as u32;
+        .count();
 
     let count_perc = count as f64 / feature_array.len() as f64;
 
@@ -103,6 +103,7 @@ pub fn compute_base_stats(feature_array: &ArrayView1<f64>) -> Result<Stats, Stri
         max,
         distinct: distinct_meta,
         infinity: inf_meta,
+        missing: None,
     })
 }
 
@@ -123,32 +124,34 @@ pub fn compute_2d_array_stats(
     bins: &Option<Vec<Vec<f64>>>,
     num_bins: &Option<u32>,
 ) -> Result<Vec<FeatureStat>, String> {
-    let mut feature_vec: Vec<FeatureStat> = Vec::with_capacity(feature_names.len());
     let columns = array_data.columns().into_iter().collect::<Vec<_>>();
 
-    columns.par_iter().enumerate().for_each(|(index, x)| {
-        let feature_name = feature_names[index];
+    let feature_vec = columns
+        .par_iter()
+        .enumerate()
+        .map(|(index, x)| {
+            let feature_name = &feature_names[index];
 
-        let data_bins = match bins {
-            Some(bins) => bins[index],
-            None => compute_bins(x, num_bins.unwrap_or(10)),
-        };
+            let data_bins = match bins {
+                Some(bins) => bins[index].to_owned(),
+                None => compute_bins(x, num_bins.unwrap_or(10)),
+            };
 
-        let data_bin_counts = compute_bin_counts(x, &data_bins);
-        let base_stats = compute_base_stats(x).unwrap();
+            let data_bin_counts = compute_bin_counts(x, &data_bins);
+            let base_stats = compute_base_stats(x).unwrap();
 
-        let bins = FeatureStat {
-            name: feature_name,
-            bins: Bin {
-                bins: data_bins,
-                bin_counts: data_bin_counts,
-            },
-            stats: base_stats,
-        };
-        feature_vec.push(bins);
-    });
+            let bins = FeatureStat {
+                name: feature_name.clone(),
+                bins: Bin {
+                    bins: data_bins.to_vec(),
+                    bin_counts: data_bin_counts,
+                },
+                stats: base_stats,
+            };
 
-    println!("results: {:?}", feature_vec);
+            return bins;
+        })
+        .collect::<Vec<FeatureStat>>();
     Ok(feature_vec)
 }
 
@@ -157,31 +160,30 @@ mod tests {
     use super::*;
     use ndarray_rand::rand_distr::Normal;
     use ndarray_rand::RandomExt;
-    use numpy::ndarray::Array1;
-    use rstats::{Median, Medianf64};
+    use numpy::ndarray::{arr1, Array2};
+    use rstats::Median;
 
     #[test]
     fn test_count_distinct() {
         // Test floats
 
         //test ints
-        let array = Array1::random(10_000, Normal::new(0.0, 1.0).unwrap()).view();
+        let array = arr1(&[1, 2, 3, 4, 5, 1, 1, 1, 1, 1, 1]);
+        let distinct = count_distinct(&array.view()).unwrap();
 
-        let distinct = count_distinct(&array).unwrap();
-
-        assert_eq!(distinct.count, 7);
-        assert_eq!(distinct.percent, 7.0 / 10.0);
+        assert_eq!(distinct.count, 5);
+        assert_eq!(distinct.percent, 5.0 / 11.0);
 
         // test string
-        let array = ["a", "b", "c", "d", "e", "a", "a", "a", "a", "a", "a"];
-        let distinct = count_distinct(&array).unwrap();
+        let array = arr1(&["a", "b", "c", "d", "e", "a", "a", "a", "a", "a", "a"]);
+        let distinct = count_distinct(&array.view()).unwrap();
 
         assert_eq!(distinct.count, 5);
         assert_eq!(distinct.percent, 5.0 / 11.0);
 
         // test float
-        let array = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 1.2, 2.3, 3.4, 8.9];
-        let distinct = count_distinct(&array).unwrap();
+        let array = arr1(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 1.2, 2.3, 3.4, 8.9]);
+        let distinct = count_distinct(&array.view()).unwrap();
 
         assert_eq!(distinct.count, 10);
         assert_eq!(distinct.percent, 10.0 / 10.0);
@@ -211,12 +213,12 @@ mod tests {
 
     #[test]
     fn test_count_infinity() {
-        let test_array = [1.0, 2.0, 3.0, 4.0, 5.0, 1.0, f64::INFINITY, f64::INFINITY];
+        let test_array = arr1(&[1.0, 2.0, 3.0, 4.0, 5.0, 1.0, f64::INFINITY, f64::INFINITY]);
 
-        let (count, count_perc) = count_infinity(&test_array).unwrap();
+        let infinity = count_infinity(&test_array.view()).unwrap();
 
-        assert_eq!(count, 2);
-        assert_eq!(count_perc, 2.0 / 8.0);
+        assert_eq!(infinity.count, 2);
+        assert_eq!(infinity.percent, 2.0 / 8.0);
     }
 
     #[test]
@@ -228,5 +230,29 @@ mod tests {
         let median = v1.as_slice().medstats(|&x| x.into()).expect("median");
 
         println!("median: {}", median);
+    }
+
+    #[test]
+    fn test_compute_2d_array() {
+        let array = ndarray::arr2(&[
+            [1.0, 2.0, 3.0, 4.0, 5.0],
+            [1.0, 2.0, 3.0, 4.0, 5.0],
+            [1.0, f64::INFINITY, 3.0, 4.0, 5.0],
+        ]);
+        let feature_names = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+        ];
+
+        let features = compute_2d_array_stats(&feature_names, &array.view(), &None, &None).unwrap();
+        assert_eq!(features.len(), 5);
+
+        let array = Array2::random((1_000, 10), Normal::new(0.0, 1.0).unwrap());
+        let feature_names = (0..10).map(|x| x.to_string()).collect::<Vec<_>>();
+        let features = compute_2d_array_stats(&feature_names, &array.view(), &None, &None).unwrap();
+        assert_eq!(features.len(), 10);
     }
 }
