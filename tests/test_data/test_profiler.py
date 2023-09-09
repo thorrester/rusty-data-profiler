@@ -32,7 +32,13 @@ def test_parse_array(
 
 
 def test_array():
-    array = np.random.rand(1_000_000, 20)
+    import psutil
+
+    array = np.random.rand(3_000_000, 100)
+    cpu_percent = psutil.cpu_percent(interval=1)
+    print(f"Array creation CPU Usage: {cpu_percent}%")
+    memory_usage = psutil.virtual_memory()
+    print(f"Array Memory Usage: {memory_usage.percent}%")
 
     start = time.time()
 
@@ -47,10 +53,18 @@ def test_array():
         unique = len(np.unique(np.array([1, 1, 0])))
         hist = np.histogram(col)
 
+    cpu_percent = psutil.cpu_percent(interval=2)
+    print(f"Numpy CPU Usage: {cpu_percent}%")
+    memory_usage = psutil.virtual_memory()
+    print(f"Numpy Memory Usage: {memory_usage.percent}%")
     print(f"numpy: {time.time() - start}")
 
     profiler = Profiler(data=array)
     start = time.time()
     profiler.parse()
     print(f"rust: {time.time() - start}")
+    cpu_percent = psutil.cpu_percent(interval=1)
+    print(f"Rust CPU Usage: {cpu_percent}%")
+    memory_usage = psutil.virtual_memory()
+    print(f"Rust Memory Usage: {memory_usage.percent}%")
     a

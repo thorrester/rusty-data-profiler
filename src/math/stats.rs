@@ -1,5 +1,6 @@
 use crate::math::histogram::{compute_bin_counts, compute_bins};
-use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Stats};
+use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Logger, Stats};
+use ndarray::prelude::*;
 use num_traits::Float;
 use numpy::ndarray::{ArrayView1, ArrayView2};
 use rayon::prelude::*;
@@ -154,6 +155,10 @@ pub fn compute_2d_array_stats(
         })
         .collect::<Vec<FeatureStat>>();
     Ok(feature_vec)
+}
+
+pub fn compute_mean_test(array_data: &ArrayView2<f64>) {
+    array_data.mean_axis(Axis(1));
 }
 
 #[cfg(test)]

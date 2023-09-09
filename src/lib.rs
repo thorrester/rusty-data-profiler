@@ -1,9 +1,15 @@
+extern crate blas_src;
+
 mod math;
 use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Stats};
-use math::stats::compute_2d_array_stats;
+use math::stats::{compute_2d_array_stats, compute_mean_test};
+use ndarray::prelude::*;
 use numpy::PyReadonlyArray2;
 use pyo3::panic::PanicException;
 use pyo3::prelude::*;
+use rayon::prelude::*;
+
+// create function that takes in 2d array and calculates mean
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -12,15 +18,22 @@ pub fn parse_array(
     array: PyReadonlyArray2<f64>,
     bins: Option<Vec<Vec<f64>>>,
     num_bins: Option<u32>,
-) -> Result<Vec<FeatureStat>, &PanicException> {
-    let feature_bins = compute_2d_array_stats(&feature_names, &array.as_array(), &bins, &num_bins);
+) {
+    //let feature_bins = compute_2d_array_stats(&feature_names, &array.as_array(), &bins, &num_bins);
+    let arr = array.as_array();
 
-    let features = match feature_bins {
-        Ok(features) => features,
-        Err(error) => panic!("Error while parsing array: {:?}", error),
-    };
+    let list = [compute_mean_test, compute_mean_test, compute_mean_test];
 
-    Ok(features)
+    list.into_par_iter().for_each(|f| {
+        f(&arr);
+    });
+
+    //let features = match feature_bins {
+    //    Ok(features) => features,
+    //    Err(error) => panic!("Error while parsing array: {:?}", error),
+    //};
+
+    //Ok(features)
 }
 
 /// add(a, b, /
