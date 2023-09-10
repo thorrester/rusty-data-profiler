@@ -947,6 +947,7 @@ version = "0.1.0"
 dependencies = [
  "blas-src",
  "itertools 0.11.0",
+ "medians",
  "ndarray",
  "ndarray-rand",
  "ndarray-stats",

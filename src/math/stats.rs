@@ -1,6 +1,7 @@
 use crate::math::histogram::{compute_bin_counts, compute_bins};
 use crate::math::logger::Logger;
 use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Stats};
+use medians::{MStats, Median, Medianf64};
 use ndarray::prelude::*;
 use ndarray_stats::{interpolate::Nearest, QuantileExt};
 use noisy_float::prelude::*;
@@ -10,14 +11,39 @@ use numpy::ndarray::{aview1, ArrayView1, ArrayView2};
 use rayon::prelude::*;
 use std::collections::HashSet;
 
+pub fn compute_quantiles(array: &ArrayView2<f64>) -> Array2<N64> {
+    let axis = Axis(0);
+    let qs = &[n64(0.25), n64(0.5), n64(0.75), n64(0.99)];
+    array
+        .map(|x| n64(*x))
+        .quantiles_axis_mut(axis, &aview1(qs), &Nearest)
+        .expect("failed to compute quantiles")
+}
+
+pub fn compute_mean(array: &ArrayView2<f64>) -> Array1<f64> {
+    array.mean_axis(Axis(0)).expect("Failed to calculate mean")
+}
+
+pub fn compute_stddev(array: &ArrayView2<f64>) -> Array1<f64> {
+    array.std_axis(Axis(0), 1.0)
+}
+
+pub fn compute_min(array: &ArrayView2<f64>) -> Array1<f64> {
+    array.map_axis(Axis(0), |view| *view.min().unwrap())
+}
+
+pub fn compute_max(array: &ArrayView2<f64>) -> Array1<f64> {
+    array.map_axis(Axis(0), |view| *view.max().unwrap())
+}
+
 struct DataProfiler<'a> {
-    array_data: &'a ArrayView2<'a, N64>,
+    array_data: &'a ArrayView2<'a, f64>,
     feature_names: &'a [String],
 }
 
 impl<'a> DataProfiler<'a> {
     pub fn new(
-        array_data: &'a ArrayView2<'a, N64>,
+        array_data: &'a ArrayView2<'a, f64>,
         feature_names: &'a [String],
     ) -> DataProfiler<'a> {
         DataProfiler {
@@ -26,24 +52,12 @@ impl<'a> DataProfiler<'a> {
         }
     }
 
-    pub fn compute_mean(&self) -> Array1<f64> {
-        let mean = self
-            .array_data
-            .mean_axis(Axis(1))
-            .expect("Failed to calculate mean");
-
-        mean
-    }
-
-    pub fn compute_median(&self) -> Array1<f64> {
-        let axis = Axis(1);
-        let qs = &[n64(0.3), n64(0.7)];
-
-        let quantiles = self
-            .array_data
-            .to_owned()
-            .quantiles_axis_mut(axis, &aview1(qs), &Nearest)
-            .unwrap();
+    pub fn compute_profile(&self) {
+        let funcs = [compute_max, compute_min, compute_mean, compute_stddev];
+        let base_stats = funcs
+            .par_iter()
+            .map(|func| func(&self.array_data))
+            .collect::<Vec<_>>();
     }
 
     pub fn compute_2d_array_stats(
@@ -75,10 +89,6 @@ impl<'a> DataProfiler<'a> {
             })
             .collect::<Vec<FeatureStat>>();
         Ok(feature_vec)
-    }
-
-    pub fn compute_mean_test(&self, array_data: &ArrayView2<f64>) {
-        array_data.mean_axis(Axis(1));
     }
 }
 
@@ -154,11 +164,7 @@ pub fn count_infinity(feature_array: &ArrayView1<f64>) -> Result<Infinity, Strin
 pub fn compute_base_stats(feature_array: &ArrayView1<f64>) -> Result<Stats, String> {
     let computed_mean = feature_array.mean().unwrap();
     let computed_stddev = feature_array.std(1.0);
-    let computed_median = feature_array
-        .to_vec()
-        .as_slice()
-        .medstats(|&val| val)
-        .unwrap();
+    let computed_median = feature_array.to_vec().as_slice().medstats().unwrap();
 
     let inf_meta = count_infinity(feature_array).unwrap();
     let distinct_meta = count_distinct(feature_array).unwrap();
@@ -230,10 +236,6 @@ pub fn compute_2d_array_stats(
         })
         .collect::<Vec<FeatureStat>>();
     Ok(feature_vec)
-}
-
-pub fn compute_mean_test(array_data: &ArrayView2<f64>) {
-    array_data.mean_axis(Axis(1));
 }
 
 #[cfg(test)]
