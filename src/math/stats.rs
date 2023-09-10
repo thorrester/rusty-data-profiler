@@ -1,11 +1,86 @@
 use crate::math::histogram::{compute_bin_counts, compute_bins};
-use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Logger, Stats};
+use crate::math::logger::Logger;
+use crate::math::types::{Bin, Distinct, FeatureStat, Infinity, Stats};
 use ndarray::prelude::*;
+use ndarray_stats::{interpolate::Nearest, QuantileExt};
+use noisy_float::prelude::*;
+use noisy_float::types::n64;
 use num_traits::Float;
-use numpy::ndarray::{ArrayView1, ArrayView2};
+use numpy::ndarray::{aview1, ArrayView1, ArrayView2};
 use rayon::prelude::*;
-use rstats::Median;
 use std::collections::HashSet;
+
+struct DataProfiler<'a> {
+    array_data: &'a ArrayView2<'a, N64>,
+    feature_names: &'a [String],
+}
+
+impl<'a> DataProfiler<'a> {
+    pub fn new(
+        array_data: &'a ArrayView2<'a, N64>,
+        feature_names: &'a [String],
+    ) -> DataProfiler<'a> {
+        DataProfiler {
+            array_data: array_data,
+            feature_names: feature_names,
+        }
+    }
+
+    pub fn compute_mean(&self) -> Array1<f64> {
+        let mean = self
+            .array_data
+            .mean_axis(Axis(1))
+            .expect("Failed to calculate mean");
+
+        mean
+    }
+
+    pub fn compute_median(&self) -> Array1<f64> {
+        let axis = Axis(1);
+        let qs = &[n64(0.3), n64(0.7)];
+
+        let quantiles = self
+            .array_data
+            .to_owned()
+            .quantiles_axis_mut(axis, &aview1(qs), &Nearest)
+            .unwrap();
+    }
+
+    pub fn compute_2d_array_stats(
+        &self,
+        feature_names: &[String],
+    ) -> Result<Vec<FeatureStat>, String> {
+        let columns = self.array_data.columns().into_iter().collect::<Vec<_>>();
+
+        let feature_vec = columns
+            .par_iter()
+            .enumerate()
+            .map(|(index, x)| {
+                let feature_name = &feature_names[index];
+                let data_bins = compute_bins(x, 10);
+
+                let data_bin_counts = compute_bin_counts(x, &data_bins);
+                let base_stats = compute_base_stats(x).unwrap();
+
+                let bins = FeatureStat {
+                    name: feature_name.clone(),
+                    bins: Bin {
+                        bins: data_bins.to_vec(),
+                        bin_counts: data_bin_counts,
+                    },
+                    stats: base_stats,
+                };
+
+                return bins;
+            })
+            .collect::<Vec<FeatureStat>>();
+        Ok(feature_vec)
+    }
+
+    pub fn compute_mean_test(&self, array_data: &ArrayView2<f64>) {
+        array_data.mean_axis(Axis(1));
+    }
+}
 
 /// Compute the number of distinct values in a 1d array of data
 ///
